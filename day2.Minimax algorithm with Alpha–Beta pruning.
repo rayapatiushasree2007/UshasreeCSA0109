@@ -1,0 +1,114 @@
+import copy
+import math
+
+EMPTY = '.'
+B, BK = 'b', 'B'
+R, RK = 'r', 'R'
+SIZE = 8
+
+def init_board():
+    board = [[EMPTY]*SIZE for _ in range(SIZE)]
+    for r in range(SIZE):
+        for c in range(SIZE):
+            if (r+c) % 2 == 1:
+                if r < 3: board[r][c] = R
+                elif r > 4: board[r][c] = B
+    return board
+
+def print_board(b):
+    print("  " + " ".join(map(str, range(SIZE))))
+    for i, row in enumerate(b):
+        print(i, " ".join(row))
+    print()
+
+def moves_dir(piece):
+    if piece in (B, BK): return [(1, -1), (1, 1)] if piece == B else [(1,-1),(1,1),(-1,-1),(-1,1)]
+    if piece in (R, RK): return [(-1,-1),(-1,1)] if piece == R else [(1,-1),(1,1),(-1,-1),(-1,1)]
+
+def get_moves(board, player):
+    moves = []
+    for r in range(SIZE):
+        for c in range(SIZE):
+            p = board[r][c]
+            if p == EMPTY or p.lower() != player: continue
+            for dr, dc in moves_dir(p):
+                nr, nc = r+dr, c+dc
+                # normal move
+                if 0<=nr<SIZE and 0<=nc<SIZE and board[nr][nc] == EMPTY:
+                    moves.append([(r,c),(nr,nc)])
+                # capture move
+                jr, jc = r+2*dr, c+2*dc
+                if 0<=jr<SIZE and 0<=jc<SIZE and board[nr][nc] != EMPTY and board[nr][nc].lower()!=player and board[jr][jc]==EMPTY:
+                    moves.append([(r,c),(jr,jc)])
+    return moves
+
+def apply_move(board, move):
+    b = copy.deepcopy(board)
+    (r1,c1),(r2,c2)=move
+    piece=b[r1][c1]; b[r1][c1]=EMPTY
+    if abs(r2-r1)==2:  # capture
+        b[(r1+r2)//2][(c1+c2)//2]=EMPTY
+    b[r2][c2]=piece
+    if piece==B and r2==7: b[r2][c2]=BK
+    if piece==R and r2==0: b[r2][c2]=RK
+    return b
+
+def evaluate(b):
+    score=0
+    for r in b:
+        for p in r:
+            if p==B: score+=3
+            if p==BK: score+=5
+            if p==R: score-=3
+            if p==RK: score-=5
+    return score
+
+def minimax(board, depth, alpha, beta, maximizing):
+    player='b' if maximizing else 'r'
+    moves = get_moves(board, player)
+    if depth==0 or not moves:
+        return evaluate(board), None
+
+    best=None
+    if maximizing:
+        value=-math.inf
+        for m in moves:
+            newb=apply_move(board,m)
+            nv,_=minimax(newb,depth-1,alpha,beta,False)
+            if nv>value: value,best=nv,m
+            alpha=max(alpha,value)
+            if alpha>=beta: break
+        return value,best
+    else:
+        value=math.inf
+        for m in moves:
+            newb=apply_move(board,m)
+            nv,_=minimax(newb,depth-1,alpha,beta,True)
+            if nv<value: value,best=nv,m
+            beta=min(beta,value)
+            if alpha>=beta: break
+        return value,best
+
+def play_game():
+    board = init_board()
+    turn = 'b'
+    while True:
+        print_board(board)
+        moves=get_moves(board,turn)
+        if not moves:
+            print("Winner:", "Red" if turn=='b' else "Black"); break
+
+        if turn=='b':
+            print("AI thinking...")
+            _,move=minimax(board,4,-math.inf,math.inf,True)
+            print("AI move:", move)
+        else:
+            print("Your turn. Enter: r1 c1 r2 c2")
+            r1,c1,r2,c2 = map(int,input().split())
+            move=[(r1,c1),(r2,c2)]
+            if move not in moves: print("Invalid!"); continue
+
+        board = apply_move(board, move)
+        turn='r' if turn=='b' else 'b'
+
+play_game()
