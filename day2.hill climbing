@@ -1,0 +1,50 @@
+import random
+
+def cost(state):
+    c = 0
+    for i in range(len(state)):
+        for j in range(i+1, len(state)):
+            if state[i] == state[j] or abs(state[i]-state[j]) == abs(i-j):
+                c += 1
+    return c
+
+def best_neighbor(state):
+    n = len(state)
+    best = list(state)
+    best_cost = cost(state)
+    for col in range(n):
+        original = state[col]
+        for row in range(n):
+            if row != original:
+                state[col] = row
+                c = cost(state)
+                if c < best_cost:
+                    best_cost = c
+                    best = list(state)
+        state[col] = original
+    return best, best_cost
+
+def hill_climbing(n, restarts=20):
+    for _ in range(restarts):
+        state = [random.randint(0, n-1) for _ in range(n)]
+        c = cost(state)
+        while True:
+            neighbor, nc = best_neighbor(state)
+            if nc < c:
+                state, c = neighbor, nc
+            else:
+                break
+        if c == 0:
+            return state, c
+    return state, c
+
+def print_board(state):
+    n = len(state)
+    for r in range(n):
+        print(" ".join("Q" if state[c] == r else "." for c in range(n)))
+
+n = int(input("Enter N: "))
+state, c = hill_climbing(n)
+print_board(state)
+print("Final Cost:", c)
+print("Valid Solution:", c == 0)
