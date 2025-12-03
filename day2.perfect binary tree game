@@ -1,0 +1,11 @@
+def minimax(values):
+    left = min(values[0], values[1])
+    right = min(values[2], values[3])
+    best = max(left, right)
+    move = "Left" if best == left else "Right"
+    return move, best
+
+values = list(map(int, input("Enter 4 leaf values: ").split()))
+move, score = minimax(values)
+print("Best Move:", move)
+print("Expected Score:", score)
